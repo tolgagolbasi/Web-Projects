@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Geolocation</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      // Note: This example requires that you consent to location sharing when
+      // prompted by your browser. If you see the error "The Geolocation service
+      // failed.", it means you probably did not give permission for the browser to
+      // locate you.
+
+      function initMap() {
+		var heatmap;
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -34.397, lng: 150.644},
+          zoom: 15
+        });
+        var infoWindow = new google.maps.InfoWindow({map: map});
+
+        // Try HTML5 geolocation.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+
+            infoWindow.setPosition(pos);
+            infoWindow.setContent('Location found.');
+            map.setCenter(pos);
+		    heatmap = new google.maps.visualization.HeatmapLayer({
+				data: getPoints(pos),
+				map: map,
+				radius: 20
+			});			
+          }, function() {
+            handleLocationError(true, infoWindow, map.getCenter());
+          });
+
+
+        } else {
+          // Browser doesn't support Geolocation
+          handleLocationError(false, infoWindow, map.getCenter());
+        }
+      }
+
+      function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
+      }
+	  function getPoints(pos) {
+		var venueRequest = "https://api.foursquare.com/v2/venues/trending?ll=" + pos.lat + "," + pos.lng + "&limit=50&radius=2000&client_id=14VKGJD4KUPOTIU1ZKR254U0MXNTD1JEWAD5XRUHTFVQOG45&client_secret=GF0IBX55DK2K5F35BMJTGKIKED4KE0CMDQB0H0BDPBZ4TSSW&v=20160622";
+		var request = new XMLHttpRequest();
+		request.open('GET', venueRequest, false);  // `false` makes the request synchronous
+		request.send(null);
+		var respd;
+		if (request.status === 200) {
+		  respd = JSON.parse(request.responseText);
+		}
+		var venues = respd.response.venues
+		var pointsArray = [];
+		for(i = 0; i < venues.length; i++) {
+			var out = {location: new google.maps.LatLng(venues[i].location.lat, venues[i].location.lng), weight: venues[i].hereNow.count};
+			pointsArray.push(out);
+		}		
+		return pointsArray;
+	  }	  
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgC3To7lb9h6ME57Y2QLbJI5y4QRhXqtM&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
